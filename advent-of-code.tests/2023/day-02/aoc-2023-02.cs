@@ -18,47 +18,39 @@ namespace advent_of_code.tests._2023.day_02;
 ///
 /// You play several games and record the information from each game (your puzzle input).
 /// Each game is listed with its ID number (like the 11 in Game 11: ...) followed by a semicolon-separated list of subsets of cubes that were revealed from the bag (like 3 red, 5 green, 4 blue).
-///
-/// For example, the record of a few games might look like this:
-///
-/// Game 1: 3 blue, 4 red; 1 red, 2 green, 6 blue; 2 green
-/// Game 2: 1 blue, 2 green; 3 green, 4 blue, 1 red; 1 green, 1 blue
-/// Game 3: 8 green, 6 blue, 20 red; 5 blue, 4 red, 13 green; 5 green, 1 red
-/// Game 4: 1 green, 3 red, 6 blue; 3 green, 6 red; 3 green, 15 blue, 14 red
-/// Game 5: 6 red, 1 blue, 3 green; 2 blue, 1 red, 2 green
 public class AoC202302
 {
-    private const string Red = "red";
-    private const string Green = "green";
-    private const string Blue = "blue";
-
     private readonly Game[] _games = File.ReadAllLines(@"2023\day-02\input.txt", Encoding.UTF8).Select(x =>
     {
         var parts = x.Split(":");
-        var number = int.Parse(parts[0].Split(" ")[1]);
-        var sets = parts[1].Split(";").Select(gs =>
+        var game = new Game(int.Parse(parts[0].Split(" ")[1]), new List<GameSet>());
+        var sets = parts[1].Split(";");
+        foreach (var set in sets)
         {
-            var setParts = gs.Split(",").Select(gp =>
+            var gameSet = new GameSet();
+            var cubes = set.Split(",");
+            foreach (var cube in cubes)
             {
-                var cubeInfos = gp.Trim().Split(" ");
-                var count = int.Parse(cubeInfos[0]);
-                var color = cubeInfos[1].Trim();
-                return new GameSetPart(color, count);
-            }).ToArray();
-
-            var gameSet = new Dictionary<string, int> { [Red] = 0, [Green] = 0, [Blue] = 0 };
-            foreach (var gameSetPart in setParts)
-            {
-                gameSet[gameSetPart.Color] = gameSetPart.Count;
+                var cubeInfo = cube.Trim().Split(" ");
+                Enum.TryParse(cubeInfo[1].Trim(), true, out CubeColors color);
+                gameSet.Cubes.Add(new CubeInfo(color, int.Parse(cubeInfo[0])));
             }
 
-            return gameSet;
-        }).ToArray();
+            game.Sets.Add(gameSet);
+        }
 
-        return new Game(number, sets);
+        return game;
     }).ToArray();
 
 
+    /// For example, the record of a few games might look like this:
+    ///
+    /// Game 1: 3 blue, 4 red; 1 red, 2 green, 6 blue; 2 green
+    /// Game 2: 1 blue, 2 green; 3 green, 4 blue, 1 red; 1 green, 1 blue
+    /// Game 3: 8 green, 6 blue, 20 red; 5 blue, 4 red, 13 green; 5 green, 1 red
+    /// Game 4: 1 green, 3 red, 6 blue; 3 green, 6 red; 3 green, 15 blue, 14 red
+    /// Game 5: 6 red, 1 blue, 3 green; 2 blue, 1 red, 2 green
+    ///
     /// In game 1, three sets of cubes are revealed from the bag (and then put back again).
     /// The first set is 3 blue cubes and 4 red cubes; the second set is 1 red cube, 2 green cubes, and 6 blue cubes; the third set is only 2 green cubes.
     ///
@@ -72,7 +64,12 @@ public class AoC202302
     [Fact]
     public void PartOne()
     {
-        var sum = _games.Sum(x => { return x.Sets.Any(w => w[Red] > 12 || w[Blue] > 14 || w[Green] > 13) ? 0 : x.Number; });
+        var sum = _games.Sum(game =>
+            game.Sets.Any(a => a.Cubes.FirstOrDefault(w => w.Color == CubeColors.Red)?.Count > 12
+                               || a.Cubes.FirstOrDefault(w => w.Color == CubeColors.Green)?.Count > 13
+                               || a.Cubes.FirstOrDefault(w => w.Color == CubeColors.Blue)?.Count > 14)
+                ? 0
+                : game.Number);
 
         sum.Should().Be(2149);
     }
@@ -101,7 +98,10 @@ public class AoC202302
     [Fact]
     public void PartTwo()
     {
-        var sum = _games.Sum(x => Math.Max(x.Sets.Max(max => max[Red]), 1) * Math.Max(x.Sets.Max(max => max[Green]), 1) * Math.Max(x.Sets.Max(max => max[Blue]), 1));
+        var sum = _games.Sum(game => Math.Max(game.Sets.SelectMany(set => set.Cubes.Where(cube => cube.Color == CubeColors.Red)).Select(c => c.Count).Max(), 1)
+                                     * Math.Max(game.Sets.SelectMany(set => set.Cubes.Where(cube => cube.Color == CubeColors.Green)).Select(c => c.Count).Max(), 1)
+                                     * Math.Max(game.Sets.SelectMany(set => set.Cubes.Where(cube => cube.Color == CubeColors.Blue)).Select(c => c.Count).Max(), 1)
+        );
 
         sum.Should().Be(71274);
     }
