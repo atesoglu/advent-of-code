@@ -22,6 +22,8 @@ namespace advent_of_code.tests._2023.day_01;
 /// </summary>
 public class AoC202301
 {
+    private readonly string[] _lines = File.ReadAllLines(@"2023\day-01\input.txt", Encoding.UTF8);
+
     /// <summary>
     /// The newly-improved calibration document consists of lines of text; each line originally contained a specific calibration value that the Elves now need to recover.
     /// On each line, the calibration value can be found by combining the first digit and the last digit (in that order) to form a single two-digit number.
@@ -37,18 +39,15 @@ public class AoC202301
     /// Consider your entire calibration document. What is the sum of all of the calibration values?
     /// </summary>
     [Fact]
-    public async Task PartOne()
+    public void PartOne()
     {
-        var lines = await File.ReadAllLinesAsync(@"2023\day-01\input.txt", Encoding.UTF8);
-
-        var total = (from line in lines
+        var total = (from line in _lines
             select new string(line.Where(char.IsDigit).ToArray())
             into digits
-            select $"{digits[0]}{digits[digits.Length - 1]}"
+            select $"{digits[0]}{digits[^1]}"
             into digit
             select int.Parse(digit)).Sum();
 
-        lines.Length.Should().BeGreaterThan(0);
         total.Should().Be(54667);
     }
 
@@ -69,10 +68,8 @@ public class AoC202301
     /// What is the sum of all of the calibration values?
     /// </summary>
     [Fact]
-    public async Task PartTwo()
+    public void PartTwo()
     {
-        var lines = await File.ReadAllLinesAsync(@"2023\day-01\input.txt", Encoding.UTF8);
-
         var replacer = new Dictionary<string, string>
         {
             { "0", "zero" },
@@ -87,14 +84,13 @@ public class AoC202301
             { "9", "nine" }
         };
 
-        var total = (from element in lines
+        var total = (from element in _lines
             select replacer.Aggregate(element, (current, pair) => current.Replace(pair.Value, $"{pair.Value}{pair.Key}{pair.Value}"))
             into replacedElement
             select new string(replacedElement.Where(char.IsDigit).ToArray())
             into digits
-            select int.Parse($"{digits[0]}{digits[digits.Length - 1]}")).ToList();
+            select int.Parse($"{digits[0]}{digits[^1]}")).ToList();
 
-        lines.Length.Should().BeGreaterThan(0);
         total.Sum().Should().Be(54203);
     }
 }
